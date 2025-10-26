@@ -5,6 +5,7 @@ import ReactFlow, {
   Background,
   useNodesState,
   useEdgesState,
+  addEdge,
   MarkerType,
   Panel,
 } from 'reactflow';
@@ -31,7 +32,8 @@ const App = () => {
     setSuccess, 
     fetchUsers, 
     deleteUser, 
-    linkUsers 
+    linkUsers,
+    updateUser
   } = useApp();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -71,6 +73,7 @@ const App = () => {
             age: user.age,
             hobbies: user.hobbies,
             popularityScore: user.popularityScore || 0,
+            onAddHobby: handleAddHobby,
           },
         };
       });
@@ -105,6 +108,32 @@ const App = () => {
     }
   }, [users, setNodes, setEdges]);
 
+  // Handle adding hobby via drag and drop
+  const handleAddHobby = async (userId, hobby) => {
+    try {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+
+      // Check if hobby already exists
+      if (user.hobbies.includes(hobby)) {
+        setError('User already has this hobby');
+        return;
+      }
+
+      // Add hobby to user's hobbies
+      const updatedHobbies = [...user.hobbies, hobby];
+      await updateUser(userId, {
+        username: user.username,
+        age: user.age,
+        hobbies: updatedHobbies,
+      });
+      
+      setSuccess(`Added "${hobby}" to ${user.username}'s hobbies!`);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   // Handle node click for linking
   const handleNodeClick = useCallback((event, node) => {
     if (linkMode) {
@@ -123,12 +152,25 @@ const App = () => {
     }
   }, [linkMode, linkSourceId, users, linkUsers]);
 
-  // Handle connection (drag from one node to another)
-  const onConnect = useCallback((params) => {
-    if (params.source !== params.target) {
-      linkUsers(params.source, params.target);
+  // Handle connection by dragging edges between nodes
+  const onConnect = useCallback((connection) => {
+    if (connection.source !== connection.target) {
+      // Create visual edge immediately
+      setEdges((eds) => addEdge({
+        ...connection,
+        type: 'smoothstep',
+        animated: true,
+        style: { stroke: '#3b82f6', strokeWidth: 2 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#3b82f6',
+        },
+      }, eds));
+      
+      // Then create the backend relationship
+      linkUsers(connection.source, connection.target);
     }
-  }, [linkUsers]);
+  }, [linkUsers, setEdges]);
 
   // Modal handlers
   const handleCreateUser = () => {
@@ -248,6 +290,18 @@ const App = () => {
                   </span>
                 </div>
               </div>
+            </div>
+          </Panel>
+
+          {/* Instructions Panel */}
+          <Panel position="bottom-left" className="m-4">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl shadow-lg p-4 max-w-md">
+              <h4 className="font-bold mb-2">💡 Quick Guide</h4>
+              <ul className="text-sm space-y-1">
+                <li>• <strong>Drag edges</strong> between nodes to connect users</li>
+                <li>• <strong>Drag hobbies</strong> from sidebar onto user nodes</li>
+                <li>• Click "Start Linking" for step-by-step connection</li>
+              </ul>
             </div>
           </Panel>
         </ReactFlow>

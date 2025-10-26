@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Plus, Search, Edit, Trash2, Award } from 'lucide-react';
+import { Users, Plus, Search, Edit, Trash2, Award, Grip } from 'lucide-react';
 
 const Sidebar = ({ users, onCreateUser, onEditUser, onDeleteUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +21,11 @@ const Sidebar = ({ users, onCreateUser, onEditUser, onDeleteUser }) => {
     );
   }, [users]);
 
+  const handleDragStart = (e, hobby) => {
+    e.dataTransfer.setData('hobby', hobby);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
   return (
     <div className="w-80 bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 flex flex-col h-full">
       {/* Header */}
@@ -40,35 +45,46 @@ const Sidebar = ({ users, onCreateUser, onEditUser, onDeleteUser }) => {
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
-        {/* Hobbies Section */}
-        <div className="p-4 border-b border-gray-200">
+        {/* Draggable Hobbies Section */}
+        <div className="p-4 border-b-2 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
           <div className="mb-3">
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <Search size={16} />
-              Search Hobbies
+            <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+              <Grip size={16} className="text-blue-600" />
+              🎯 Drag Hobbies to Users
             </label>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Type to filter..."
+              placeholder="Search hobbies..."
               className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-2 max-h-64 overflow-y-auto">
             {filteredHobbies.length > 0 ? (
               filteredHobbies.map(hobby => (
-                <span
+                <div
                   key={hobby}
-                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium cursor-default hover:bg-blue-200 transition"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, hobby)}
+                  className="px-3 py-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-lg cursor-move hover:from-blue-200 hover:to-blue-300 transition transform hover:scale-105 shadow-sm hover:shadow-md flex items-center gap-2 font-medium"
                 >
+                  <Grip size={14} className="text-blue-600" />
                   {hobby}
-                </span>
+                </div>
               ))
             ) : (
-              <p className="text-gray-500 text-sm">No hobbies found</p>
+              <p className="text-gray-500 text-sm text-center py-4">
+                {searchTerm ? 'No hobbies found' : 'No hobbies available yet'}
+              </p>
             )}
+          </div>
+
+          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-xs text-yellow-800">
+              💡 <strong>Tip:</strong> Drag any hobby and drop it on a user node to add it!
+            </p>
           </div>
         </div>
 
